@@ -1,0 +1,35 @@
+In this project, we will be importing Lean's version of the real
+and complex numbers, and then developing the basic theory of
+limits. Formally, what we want from Lean is the assumptions
+made about the real numbers in M1P1, which are that the reals
+are a complete archimedean ordered field. In practice this
+means the following.
+
+1) We can use the "ring" tactic to prove basic algebraic results
+such as (a + (b + 4)) * x = a * x + 4 * x + b * x
+
+2) We can use the "linarith" tactic to prove basic inequalities
+such as x > 0 and y > 0 implies x + y > 0
+
+3) There is a basic theory of absolute values.
+We could develop such a theory ourselves but we may as well take
+advantage of Lean's library for these functions. Here are examples
+of theorems we will use:
+
+le_abs_self a : a ≤ |a|
+abs_neg a : |-a| = |a|
+
+[probably more to come]
+
+4) We can use an inbuilt theorem
+
+theorem exists_sup (S : set ℝ) : (∃ x, x ∈ S) → (∃ x, ∀ y ∈ S, y ≤ x) →
+  ∃ x, ∀ y, x ≤ y ↔ ∀ z ∈ S, z ≤ y
+
+which says that if a set S of reals is non-empty and bounded
+then it has a least upper bound. Be warned though -- the
+related "Sup" function takes as input a set of reals, and if
+it has a sup it returns the sup, but if it does not have a sup
+then this function returns some junk value (it returns 0, in fact);
+this is for technical foundational reasons to do with
+type theory (Lean can't return "error", it has to return a number).
