@@ -91,7 +91,7 @@ begin
     apply le_max_right
   },
   -- So now a basic calculation shows 2ε < 2ε. 
-  -- Let's ass how to do this in Lean.
+  -- Let's show to do this in Lean.
   have theother : 2 * ε < 2 * ε,
     calc 2 * ε = 2 * ((m - l) / 2) : by refl -- i.e. by definition
     ...        = m - l : by ring -- "ring" does the algebra for you
