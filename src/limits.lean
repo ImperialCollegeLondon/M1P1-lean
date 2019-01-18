@@ -95,7 +95,7 @@ begin
   have theother : 2 * ε < 2 * ε,
     calc 2 * ε = 2 * ((m - l) / 2) : by refl -- i.e. by definition
     ...        = m - l : by ring -- "ring" does the algebra for you
-    ...        ≤ | m - l | : le_abs_self _ -- this low-level theorem `le_abs-self` is a proof that x ≤ |x|.
+    ...        ≤ | m - l | : le_abs_self _ -- this low-level theorem `le_abs_self` is a proof that x ≤ |x|.
     ...        ≤ |a N  - l| + |a N - m| : triangle' _ _ _ -- our earlier lemma
     ...        < ε + ε : by linarith -- easy inequality argument
     ...        = 2 * ε : by ring, -- easy algebraic argument
