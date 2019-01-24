@@ -158,3 +158,53 @@ begin
                                -- and a bit more algebra
   ...                        = ε : by ring
 end
+
+-- A sequence (aₙ) is *bounded* if there exists some real number B such that |aₙ| ≤ B for all n≥0.
+
+definition has_bound (a : ℕ → ℝ) (B : ℝ) := ∀ n, |a n| ≤ B
+definition is_bounded (a : ℕ → ℝ) := ∃ B, has_bound a B
+
+-- A convergent sequence is bounded.
+open finset
+theorem bounded_of_convergent (a : ℕ → ℝ) (Ha : has_limit a) : is_bounded a :=
+begin
+  -- let l be the limit of the sequence.
+  cases Ha with l Hl,
+  -- By definition, there exist some N such that n ≥ N → |aₙ - l| < 1
+  cases Hl 1 (zero_lt_one) with N HN,
+  -- Let X be {|a₀|, |a₁|, ... , |a_N|}...
+  let X := image (abs ∘ a) (range (N + 1)),
+  -- ...let's remark that |a₀| ∈ X so X ≠ ∅ while we're here...
+  have H2 : |a 0| ∈ X := mem_image_of_mem _ (mem_range.2 (nat.zero_lt_succ _)),
+  have H3 : X ≠ ∅ := ne_empty_of_mem H2,
+  -- ...and let B₀ be the max of X.
+  let B₀ := max' X H3,
+  -- If n ≤ N then |aₙ| ≤ B₀.
+  have HB₀ : ∀ n ≤ N, |a n| ≤ B₀ := λ n Hn, le_max' X H3 _
+    (mem_image_of_mem _ (mem_range.2 (nat.lt_succ_of_le Hn))),
+  -- So now let B = max {B₀, |l| + 1}
+  let B := max B₀ ( |l| + 1),
+  -- and we claim this bound works, i.e. |aₙ| ≤ B for all n ∈ ℕ.
+  use B,
+  -- Because if n ∈ ℕ,
+  intro n,
+  -- then either n ≤ N or n > N.
+  cases le_or_gt n N with Hle Hgt,
+  { -- if n ≤ N, then |aₙ| ≤ B₀
+    have h : |a n| ≤ B₀ := HB₀ n Hle,
+    -- and B₀ ≤ B 
+    have h2 : B₀ ≤ B := le_max_left _ _,
+    -- so we're done
+    linarith },
+  { -- and if n > N, then |aₙ - l| < 1...
+    have h : |a n - l| < 1 := HN n (le_of_lt Hgt),
+    -- ...so |aₙ| < 1 + |l|...
+    have h2 : |a n| < |l| + 1,
+      -- todo (kmb) -- remove linarith bug workaround
+      revert h,unfold abs,unfold max,split_ifs;intros;linarith {restrict_type := ℝ},
+    -- ...which is ≤ B
+    have h3 : |l| + 1 ≤ B := le_max_right _ _,
+    -- ...so we're done in this case too
+    linarith   
+  }
+end
