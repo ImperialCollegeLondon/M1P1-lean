@@ -208,3 +208,103 @@ begin
     linarith   
   }
 end
+
+-- more convenient theorem: a sequence with a limit
+-- is bounded in absolute value by a positive real.
+theorem bounded_pos_of_convergent (a : ℕ → ℝ) (Ha : has_limit a) :
+∃ B : ℝ, B > 0 ∧ has_bound a B :=
+begin
+  -- We know the sequence is bounded. Say it's bounded by B₀.
+  cases bounded_of_convergent a Ha with B₀ HB₀,
+  -- let B = |B₀| + 1; this bound works.
+  let B := |B₀| + 1,
+  use B,
+  -- B is obviously positive 
+  split,
+  { -- (because 1 > 0...
+    apply lt_of_lt_of_le zero_lt_one,
+    show 1 ≤ |B₀| + 1,
+    apply le_add_of_nonneg_left',
+    -- ... and |B₀| ≥ 0)
+    exact abs_nonneg _
+  },
+  -- so it suffices to prove B is a bound.
+  -- If n is a natural
+  intro n,
+  -- then |aₙ| ≤ B₀
+  apply le_trans (HB₀ n),
+  -- so it suffices to show B₀ ≤ |B₀| + 1
+  show B₀ ≤ |B₀| + 1,
+  -- which is obvious.
+  apply le_trans (le_abs_self B₀),
+  simp [zero_le_one],
+end
+
+-- If a convergent sequence is bounded in absolute value by B,
+-- then the limit is also bounded in absolute value by B.
+theorem limit_bounded_of_bounded {a : ℕ → ℝ} {l : ℝ} (Ha : is_limit a l)
+  {B : ℝ} (HB : has_bound a B) : |l| ≤ B :=
+begin
+  -- Suppose it's not true.
+  apply le_of_not_gt,
+  -- Then |l| > B.
+  intro HlB,
+  -- Set ε = (|l| - B) / 2,
+  let ε := ( |l| - B) / 2,
+  -- noting that it's positive
+  have Hε : ε > 0 := div_pos (by linarith) (by linarith),
+  -- and choose N such that |a_N - l| < ε
+  cases Ha ε Hε with N HN,
+  have HN2 := HN N (le_refl _),
+  -- Now |a_N| ≤ B
+  have HB2 : |a N| ≤ B := HB N,
+  -- so now we get a contradiction
+  have Hcontra :=
+  calc |l| ≤ |a N - l| + |a N| : by unfold abs;unfold max;split_ifs;linarith
+  ...      < ε + B : add_lt_add_of_lt_of_le HN2 HB2
+  ...      = ( |l| - B) / 2 + B : rfl
+  ...      < |l| : by linarith,
+  linarith,  
+end
+
+-- The limit of the product is the product of the limits.
+-- If aₙ → l and bₙ → m then aₙ * bₙ → l * m.
+theorem tendsto_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
+  (h1 : is_limit a l) (h2 : is_limit b m) :
+  is_limit (a * b) (l * m) :=
+begin
+  -- let epsilon be a positive real
+  intros ε Hε,
+  -- Now aₙ has a limit,
+  have ha : has_limit a := ⟨l,h1⟩,
+  -- so it's bounded in absolute value by a positive real A
+  rcases bounded_pos_of_convergent a ha with ⟨A,HApos,HAbd⟩,
+  -- Similarly bₙ is bounded by B.
+  rcases bounded_pos_of_convergent b ⟨m,h2⟩ with ⟨B,HBpos,HBbd⟩,
+  -- Now chose N_A such that n ≥ N_A -> |aₙ - l| < ε / 2B
+  cases h1 (ε / (2 * B)) (div_pos Hε (by linarith)) with NA HNA,
+  -- and choose N_B such that n ≥ N_B -> |bₙ - m| < ε /2A
+  cases h2 (ε / (2 * A)) (div_pos Hε (by linarith)) with NB HNB,
+  -- Let N be the max of N_A and N_B; this N works.
+  let N := max NA NB,
+  use N,
+  -- For if n ≥ N
+  intros n Hn,
+  -- then |aₙ bₙ - l m| ...
+  calc 
+        |a n * b n - l * m| 
+      = |a n * (b n - m) + (a n - l) * m | : by ring
+  ... ≤ |a n * (b n - m)| + |(a n - l) * m| : abs_add _ _
+  ... ≤ |a n| * |b n - m| + |a n - l| * |m| : by simp [abs_mul]
+  ... ≤ A * |b n - m| + |a n - l| * |m| :
+                add_le_add_right (mul_le_mul_of_nonneg_right (HAbd n) (abs_nonneg _)) _
+  ... < A * (ε / (2 * A)) + |a n - l| * |m| :
+               add_lt_add_right (mul_lt_mul_of_pos_left (HNB n (le_trans (le_max_right _ _) Hn)) HApos) _
+  ... ≤ A * (ε / (2 * A)) + (ε / (2 * B)) * |m| :
+               add_le_add_left (mul_le_mul_of_nonneg_right (le_of_lt $ HNA n $ le_trans (le_max_left _ _) Hn) (abs_nonneg _)) _
+  ... ≤ A * (ε / (2 * A)) + (ε / (2 * B)) * B :
+               add_le_add_left (mul_le_mul_of_nonneg_left (limit_bounded_of_bounded h2 HBbd) $ le_of_lt $ div_pos Hε (by linarith)) _
+  ... = ε / 2 + (ε / (2 * B)) * B : by rw [←div_div_eq_div_mul,mul_div_cancel' _ (show A ≠ 0, by intro h;rw h at HApos;linarith)]
+  ... = ε / 2 + ε / 2 : by rw [←div_div_eq_div_mul,div_mul_cancel _ (show B ≠ 0, by intro h;rw h at HBpos;linarith)]
+  ... = ε : by ring 
+end
