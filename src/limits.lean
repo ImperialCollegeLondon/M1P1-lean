@@ -308,3 +308,36 @@ begin
   ... = ε / 2 + ε / 2 : by rw [←div_div_eq_div_mul,div_mul_cancel _ (show B ≠ 0, by intro h;rw h at HBpos;linarith)]
   ... = ε : by ring 
 end
+
+-- If aₙ → l and bₙ → m, and aₙ ≤ bₙ for all n, then l ≤ m
+theorem tendsto_le_of_le (a : ℕ → ℝ) (b : ℕ → ℝ)
+  (l : ℝ) (m : ℝ) (hl : is_limit a l) (hm : is_limit b m) 
+  (hle : ∀ n, a n ≤ b n) : l ≤ m :=
+begin
+  -- Assume for a contradiction that m < l
+  apply le_of_not_lt,
+  intro hlt,
+  -- Let ε be (l - m) / 2...
+  let ε := (l - m) /2,
+  -- ...and note that it's positive
+  have Hε : ε > 0 := show (l - m) / 2 > 0 , by linarith,
+  -- Choose Na s.t.  |aₙ - l| < ε for n ≥ Na
+  cases hl ε Hε with Na HNa,
+  have Hε : ε > 0 := show (l - m) / 2 > 0 , by linarith,
+  -- Choose Nb s.t.  |bₙ - m| < ε for n ≥ Nb
+  cases hm ε Hε with Nb HNb,
+  -- let N be the max of Na and Nb...
+  let N := max Na Nb,
+  -- ...and note N ≥ Na and N ≥ Nb,
+  have HNa' : Na ≤ N := le_max_left _ _,
+  have HNb' : Nb ≤ N := le_max_right _ _,
+  -- ... so |a_N - l| < ε and |b_N - m| < ε
+  have Hl' : |a N - l| < ε := HNa N HNa',
+  have Hm' : |b N - m| < ε := HNb N HNb',
+  -- ... and also a_N ≤ b_N.
+  have HN : a N ≤ b N := hle N,
+  -- This is probably a contradiction.
+  have Hε : ε = (l - m) / 2 := rfl,
+  revert Hl' Hm',
+  unfold abs,unfold max,split_ifs;intros;linarith
+end
