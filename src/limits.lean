@@ -30,6 +30,10 @@ import tactic.linarith
 -- Basically they tell Lean to use the axiom of choice and the
 -- law of the excluded middle, two standard maths facts which we
 -- assume all the time in maths, usually without comment. 
+
+-- Patrick's extension of linarith
+import obvineq -- "obvious inequalities"
+
 noncomputable theory
 local attribute [instance, priority 0] classical.prop_decidable
 
@@ -293,9 +297,13 @@ begin
   -- then |aₙ bₙ - l m| ...
   calc 
         |a n * b n - l * m| 
+      -- equals |aₙ (bₙ - m) + (aₙ - l) m|, 
       = |a n * (b n - m) + (a n - l) * m | : by ring
+      -- which by the triangle inequality and multiplicativy of |.|
   ... ≤ |a n * (b n - m)| + |(a n - l) * m| : abs_add _ _
+      -- is at most |aₙ| |bₙ - m| + |aₙ - l| |m|,
   ... ≤ |a n| * |b n - m| + |a n - l| * |m| : by simp [abs_mul]
+      -- which is at most A(ε / 2A) + B(ε / 2B), by a very tedious calculation in Lean
   ... ≤ A * |b n - m| + |a n - l| * |m| :
                 add_le_add_right (mul_le_mul_of_nonneg_right (HAbd n) (abs_nonneg _)) _
   ... < A * (ε / (2 * A)) + |a n - l| * |m| :
@@ -304,6 +312,7 @@ begin
                add_le_add_left (mul_le_mul_of_nonneg_right (le_of_lt $ HNA n $ le_trans (le_max_left _ _) Hn) (abs_nonneg _)) _
   ... ≤ A * (ε / (2 * A)) + (ε / (2 * B)) * B :
                add_le_add_left (mul_le_mul_of_nonneg_left (limit_bounded_of_bounded h2 HBbd) $ le_of_lt $ div_pos Hε (by linarith)) _
+  -- which is at most ε by some easy algebra.
   ... = ε / 2 + (ε / (2 * B)) * B : by rw [←div_div_eq_div_mul,mul_div_cancel' _ (show A ≠ 0, by intro h;rw h at HApos;linarith)]
   ... = ε / 2 + ε / 2 : by rw [←div_div_eq_div_mul,div_mul_cancel _ (show B ≠ 0, by intro h;rw h at HBpos;linarith)]
   ... = ε : by ring 
@@ -340,4 +349,30 @@ begin
   have Hε : ε = (l - m) / 2 := rfl,
   revert Hl' Hm',
   unfold abs,unfold max,split_ifs;intros;linarith
+end
+
+theorem sandwich (a b c : ℕ → ℝ)
+  (l : ℝ) (ha : is_limit a l) (hc : is_limit c l) 
+  (hab : ∀ n, a n ≤ b n) (hbc : ∀ n, b n ≤ c n) : is_limit b l :=
+begin
+  -- Choose ε > 0
+  intros ε Hε,
+  -- we now need an N. This is a standard ε/2 argument.
+  -- Choose Na and Nc such that |aₙ - l| < ε for n ≥ Na and |cₙ - l| < ε for n ≥ Nc.
+  cases ha ε Hε with Na Ha,
+  cases hc ε Hε with Nc Hc,
+  -- and as usual let N be the max.
+  let N := max Na Nc,
+  use N,
+  -- Now for n ≥ N, note n ≥ Na and N ≥ Nc,
+  have HNa : Na ≤ N := by obvineq,  
+  have HNc : Nc ≤ N := by obvineq,
+  intros n Hn,
+  have h1 : a n ≤ b n := hab n,
+  have h2 : b n ≤ c n := hbc n,
+  have h3 : |a n - l| < ε := Ha n (le_trans HNa Hn),
+  have h4 : |c n - l| < ε := Hc n (le_trans HNc Hn),
+  revert h3,revert h4,
+  unfold abs,unfold max,
+  split_ifs;intros;linarith,
 end
