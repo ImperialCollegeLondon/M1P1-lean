@@ -25,6 +25,8 @@ import algebra.pi_instances
 -- (2) ring [to prove basic algebra identities like (a+b)^2 = a^2+2ab+b^2]
 -- (3) linarith [to prove basic inequalities like x > 0 -> x/2 > 0]
 import tactic.linarith
+import topology.basic
+import analysis.exponential
 
 -- These lines switch Lean into "maths proof mode" -- don't worry about them.
 -- Basically they tell Lean to use the axiom of choice and the
@@ -32,6 +34,10 @@ import tactic.linarith
 -- assume all the time in maths, usually without comment. 
 noncomputable theory
 local attribute [instance, priority 0] classical.prop_decidable
+
+-- Let's also put things into an M1P1 namespace so we can define
+-- stuff which is already defined in mathlib without breaking anything.
+namespace M1P1
 
 -- the maths starts here.
 
@@ -158,3 +164,5 @@ begin
                                -- and a bit more algebra
   ...                        = ε : by ring
 end
+
+end M1P1
