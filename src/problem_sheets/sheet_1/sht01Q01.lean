@@ -29,17 +29,74 @@ begin
   -- We now have a complicated statement with three "if"s in.
   split_ifs,
   -- We now have 2^3=8 goals corresponding to all the possibilities
-  -- x>=0/x<0, y>=0/y<0, (x+y)>=0/(x+y)<0.
+  -- x>=0 or x<0, y>=0 or y<0, (x+y)>=0 or (x+y)<0.
   repeat {linarith},
   -- all of them are easily solvable using the linarith tactic.
 end
 
+-- We can solve the remaining parts using part (a).
+theorem Q1b (x y : ℝ) : |x + y| ≥ |x| - |y| :=
+begin
+  -- Apply Q1a to x+y and -y, then follow your nose.
+  have h := Q1a (x + y) (-y),
+  simp at h,
+  linarith,
+end
 
--- Example of how to apply this
-theorem Q1h (x y z : ℝ) : | x - y | ≤ | z - y | + | z - x | :=
-calc
-| x - y | = | (z - y) + (x - z) | : by ring
-...       ≤ | z - y | + | x - z | : by refine Q1a _ _ -- applying triangle inequality
-...       = | z - y | + | -(x - z) | : by rw abs_neg -- this lemma says |-x| = |x|
-...       = | z - y | + | z - x | : by simp
+theorem Q1c (x y : ℝ) : |x + y| ≥ |y| - |x| :=
+begin
+  -- Apply Q1a to x+y and -x, then follow your nose.
+  have h := Q1a (x + y) (-x),
+  simp at h,
+  linarith,
+end
 
+theorem Q1d (x y : ℝ) : |x - y| ≥ | |x| - |y| | :=
+begin
+  -- Lean prefers ≤ to ≥
+  show _ ≤ _,
+  -- for this one we need to apply the result that |X| ≤ B ↔ -B ≤ X and X ≤ B 
+  rw abs_le,
+  -- Now we have two goals:
+  -- first -|x - y| ≤ |x| - |y|
+  -- and second |x| - |y| ≤ |x - y|.
+  -- So we need to split.
+  split,
+  { -- -|x - y| ≤ |x| - |y|
+    have h := Q1a (x - y) (-x),
+    simp at *,
+    linarith },
+  { -- |x| - |y| ≤ |x - y|
+    have h := Q1a (x - y) y,
+    simp at *,
+    linarith}
+end
+
+theorem Q1e (x y : ℝ) : |x| ≤ |y| + |x - y| :=
+begin
+  have h := Q1a y (x - y),
+  simp * at *,
+end
+
+theorem Q1f (x y : ℝ) : |x| ≥ |y| - |x - y| :=
+begin
+  have h := Q1a (x - y) (-x),
+  simp * at *,
+  linarith,
+end
+
+theorem Q1g (x y z : ℝ) : |x - y| ≤ |x - z| + |y - z| :=
+begin
+  have h := Q1a (x - z) (z - y),
+  -- Lean needs more hints with this one.
+  -- First let's change that y - z into z - y,
+  rw ←abs_neg (y - z),
+  -- now get everything into some sort of normal form
+  simp * at *,
+  -- unfortunately Lean didn't yet simplify x + (z + (-y + -z))
+  -- The "convert" tactic says "OK the goal should equal this, so
+  -- replace the goal with all the bits that aren't exactly equal"
+  convert h,
+  -- now we need to prove -y = z + (-y + -z)!
+  ring,
+end
