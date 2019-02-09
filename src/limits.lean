@@ -25,8 +25,10 @@ import algebra.pi_instances
 -- (2) ring [to prove basic algebra identities like (a+b)^2 = a^2+2ab+b^2]
 -- (3) linarith [to prove basic inequalities like x > 0 -> x/2 > 0]
 import tactic.linarith
-import topology.basic
-import analysis.exponential
+
+--import topology.basic
+-- Ken Lee wanted to import this
+--import analysis.exponential
 
 -- These lines switch Lean into "maths proof mode" -- don't worry about them.
 -- Basically they tell Lean to use the axiom of choice and the
