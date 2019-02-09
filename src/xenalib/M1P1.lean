@@ -1,8 +1,9 @@
-import tactic.linarith
+import tactic.linarith data.real.basic
 
--- Next lemma could be either hidden of given a user-friendly proof
---lemma zero_of_abs_lt_all (x : ℝ) (h : ∀ ε > 0, |x| < ε) : x = 0 :=
---eq_zero_of_abs_eq_zero $ eq_of_le_of_forall_le_of_dense (abs_nonneg x) $ λ ε ε_pos, le_of_lt (h ε ε_pos)
+local notation `|` x `|` := abs x
+
+lemma zero_of_abs_lt_all (x : ℝ) (h : ∀ ε > 0, |x| < ε) : x = 0 :=
+eq_zero_of_abs_eq_zero $ eq_of_le_of_forall_le_of_dense (abs_nonneg x) $ λ ε ε_pos, le_of_lt (h ε ε_pos)
 
 -- The next few things should be hidden
 @[user_attribute]
