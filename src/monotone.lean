@@ -64,11 +64,18 @@ begin
     refine h1 (λ n, N + nat.rec_on n (g 0) (λ n ih, g ih)) _ _,
     { apply strictly_increasing_of_nat, intros n, exact add_lt_add_left (hg1 _) _ },
     apply strictly_increasing_of_nat, intros n, exact hg2 _ },
-  intros n, by_contra h3, simp only [not_exists, not_lt] at h3,
-  have : f 0 ∈ (finset.range $ n + 1).image f := finset.mem_image_of_mem _ (finset.mem_range.2 n.succ_pos),
+  intros n, by_contra h3, simp only [not_exists] at h3,
+  have : f N ∈ (finset.range $ n + 1).image (λ n, f (N + n)) := finset.mem_image_of_mem _ (finset.mem_range.2 n.succ_pos),
   cases finset.max_of_mem this with fm hfm,
   rcases finset.mem_image.1 (finset.mem_of_max hfm) with ⟨m, hm, rfl⟩,
   rw finset.mem_range at hm,
   cases h2 m with s hs,
-  sorry
+  have hfnm : f (N + n) ≤ f (N + m),
+  { refine finset.le_max_of_mem _ hfm,
+    exact finset.mem_image_of_mem (λ n, f (N + n)) (finset.mem_range.2 n.lt_succ_self) },
+  have hsn : s < n + 1 := nat.lt_succ_of_le (le_of_not_lt (λ hns, h3 s hns $ lt_of_le_of_lt hfnm hs)),
+  have hfsm : f (N + s) ≤ f (N + m),
+  { refine finset.le_max_of_mem _ hfm,
+    exact finset.mem_image_of_mem (λ n, f (N + n)) (finset.mem_range.2 hsn) },
+  exact not_le_of_lt hs hfsm
 end
