@@ -25,8 +25,10 @@ import algebra.pi_instances
 -- (2) ring [to prove basic algebra identities like (a+b)^2 = a^2+2ab+b^2]
 -- (3) linarith [to prove basic inequalities like x > 0 -> x/2 > 0]
 import tactic.linarith
-import topology.basic
-import analysis.exponential
+
+--import topology.basic
+-- Ken Lee wanted to import this
+--import analysis.exponential
 
 -- These lines switch Lean into "maths proof mode" -- don't worry about them.
 -- Basically they tell Lean to use the axiom of choice and the
@@ -62,70 +64,95 @@ definition is_limit (a : ℕ → ℝ) (l : ℝ) : Prop :=
 -- claim that it exists.
 definition has_limit (a : ℕ → ℝ) : Prop := ∃ l : ℝ, is_limit a l
 
--- We now start on the proof of the theorem that if a sequence has
--- two limits, they are equal. We start with a lemma.
-
-theorem triangle' (x y z : ℝ) : | x - y | ≤ | z - y | + | z - x | :=
+lemma tendsto_const (a : ℝ) : is_limit (λ n, a) a :=
 begin
-  -- See the solution to sheet 1 Q1a for a more detailed explanation of this argument.
-  -- We start by unfolding the definitions.
-  unfold abs, unfold max,
-  -- The value of | x - y | depends on whether x - y ≥ 0 or < 0. 
-  -- The `split_ifs` tactic splits into these 8 = 2^3 cases
-  split_ifs,
-  -- Each case is trivial by easy inequality arguments, and the `linarith`
-  -- tactic solves them all.
-  repeat {linarith},
+  intros ε εpos,
+  use 0,
+  intros n _,
+  simpa using εpos
 end
+
+local attribute [-simp] sub_eq_add_neg
+local attribute [simp] sub_zero
+
+-- We will need an easy reformulation of the limit definition
+lemma tendsto_iff_sub_tendsto_zero {a : ℕ → ℝ} {l : ℝ} :
+  is_limit (λ n, a n - l) 0 ↔ is_limit a l :=
+begin
+  split ; 
+  { intros h ε εpos,
+    rcases h ε εpos with ⟨N, H⟩,
+    use N,
+    intros n hn,
+    simpa using H n hn }
+end
+
+-- In the definition of a limit, the final ε can be replaced 
+-- by a constant multiple of ε. We could assume this constant is positive
+-- but we don't want to deal with this when applying the lemma.
+lemma tendsto_of_mul_eps (a : ℕ → ℝ) (l : ℝ) (A : ℝ)
+  (h : ∀ ε > 0, ∃ N, ∀ n ≥ N, | a n - l | < A*ε) : is_limit a l :=
+begin
+  -- Let ε be any positive number
+  intros ε εpos,
+  -- A is either non positive or positive
+  cases le_or_gt A 0 with Anonpos Apos,
+  { -- If A is non positive then our assumed bound quickly
+    -- gives a contradiction. 
+    exfalso,
+    -- Indeed we can apply our assumption to ε = 1 to get N such that
+    -- ∀ (n : ℕ), n ≥ N → |a n - l| < A * 1 
+    rcases h 1 (by linarith) with ⟨N, H⟩,
+    -- in particular this holds when n = N
+    specialize H N (by linarith),
+    -- but |a N - l| ≥ 0 so we get a contradiction
+    have : |a N - l| ≥ 0, from abs_nonneg _,
+    linarith },
+  { -- Now assume A is positive. Our assumption h gives N such that
+    -- ∀ n ≥ N, |a n - l| < A * (ε / A)
+    rcases h (ε/A) (div_pos εpos Apos) with ⟨N, H⟩,
+    -- we can simplify that A * (ε / A) and we are done.
+    rw mul_div_cancel' _ (ne_of_gt Apos) at H,
+    tauto }
+end
+
+-- We now start on the proof of the theorem that if a sequence has
+-- two limits, they are equal. 
+
+-- Next lemma could be either hidden of given a user-friendly proof
+lemma zero_of_abs_lt_all (x : ℝ) (h : ∀ ε > 0, |x| < ε) : x = 0 :=
+eq_zero_of_abs_eq_zero $ eq_of_le_of_forall_le_of_dense (abs_nonneg x) $ λ ε ε_pos, le_of_lt (h ε ε_pos)
 
 -- We're ready to prove the theorem.
 theorem limits_are_unique (a : ℕ → ℝ) (l m : ℝ) (hl : is_limit a l)
 (hm : is_limit a m) : l = m :=
 begin
-  -- WLOG l ≤ m.
-  wlog h : l ≤ m, 
-  -- We're trying to prove l = m, so it suffices to prove l < m is false.
-  suffices : ¬ (l < m),
-    linarith,
-  -- don't need h any more
-  clear h,
-  -- Let's prove it by contradiction. So let's assume l < m.
-  intro hlm,
-  -- Our goal is now "⊢ false" and hlm is the assumption l < m.
-  -- Situation so far: aₙ → l, aₙ → m, hlm is the assumption l < m
-  -- and we're looking for a contradiction.
-  let ε := (m - l) / 2, -- This is a standard trick.
-  -- First note that ε is positive, because l > m.
-  have Hε : ε > 0 := by {show (m - l) / 2 > 0, linarith},
-  -- Because aₙ → l, there exists N₁ such that n ≥ N₁ → |aₙ - l| < ε 
-  cases hl ε Hε with N₁ HN₁,
-  -- Because bₙ → m, there exists N₂ such that n ≥ N₂ → |bₙ - m| < ε 
-  cases hm ε Hε with N₂ HN₂,
-  -- The trick is to let N be the max of N₁ and N₂
-  let N := max N₁ N₂,
-  -- Now clearly N ≥ N₁...
-  have H₁ : N₁ ≤ N := le_max_left _ _,
-  -- ... so |a_N - l| < ε
-  have Ha : | a N - l| < ε := HN₁ N H₁,
-  -- similarly N ≥ N₂...
-  have H₂ : N₂ ≤ N := le_max_right _ _,
-  -- ... so |a_N - m| < ε too
-  have H₂ : | a N - m| < ε := HN₂ N H₂,
-  -- So now a basic calculation shows 2ε < 2ε. Let's go through it.
-  have weird : 2 * ε < 2 * ε,
-    calc 2 * ε = 2 * ((m - l) / 2) : by refl -- by definition
-                 -- and this is obviously m - l
-    ...        = m - l : by ring
-                 -- which is at most its own absolute value
-    ...        ≤ | m - l | : le_abs_self _
-                 -- and now use the triangle inequality
-    ...        ≤ |a N  - l| + |a N - m| : triangle' _ _ _
-                 -- and stuff we proved already
-    ...        < ε + ε : by linarith
-                 -- to deduce this is less than 2ε
-    ...        = 2 * ε : by ring,
-  -- That's the contradiction we seek!
-  linarith -- (it's an easy inequality argument)
+  -- Let prove |l - m| is smaller than any positive number, since that will easily imply l = m
+  suffices : ∀ ε : ℝ, ε > 0 → |l - m| < ε,
+    from eq_of_sub_eq_zero (zero_of_abs_lt_all _ this),
+  -- Let ε be any positive number, and let's prove |l - m| < ε
+  intros ε ε_pos,
+  -- Because aₙ → l, there exists Nₗ such that n ≥ Nₗ → |aₙ - l| < ε/2
+  cases hl (ε/2) (by obvious_ineq) with Nₗ Hₗ,
+  -- Because aₙ → m, there exists Nₘ such that n ≥ Nₘ → |aₙ - m| < ε/2
+  cases hm (ε/2) (by obvious_ineq) with Nₘ Hₘ,
+  -- The trick is to let N be the max of Nₗ and Nₘ
+  let N := max Nₗ Nₘ,
+  -- Now clearly N ≥ Nₗ...
+  have H₁ : Nₗ ≤ N := by obvious_ineq,
+  -- ... so |a_N - l| < ε/2
+  have H : | a N - l| < ε/2 := Hₗ N H₁,
+  -- similarly N ≥ Nₘ...
+  have H₂ : Nₘ ≤ N := by obvious_ineq,
+  -- ... so |a_N - m| < ε/2 too
+  have H' : | a N - m| < ε/2 := Hₘ N H₂,
+  -- We now combine
+  calc 
+    |l - m| = |(l - a N) + (a N - m)| : by ring
+        ... ≤ |l - a N| + |a N - m|   : abs_add _ _
+        ... = |a N - l | + |a N - m|  : by rw abs_sub
+        ... < ε/2 + ε/2               : by obvious_ineq
+        ... = ε                       : by ring,
 end
 
 -- We now prove that if aₙ → l and bₙ → m then aₙ + bₙ → l + m.
@@ -133,47 +160,48 @@ theorem tendsto_add (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
   (h1 : is_limit a l) (h2 : is_limit b m) :
   is_limit (a + b) (l + m) :=
 begin
+  apply tendsto_of_mul_eps,
   -- let epsilon be a positive real
   intros ε Hε,
-  -- We now need to come up with N such that n >= N implies
-  -- |aₙ + bₙ - (l + m)| < ε.
-  -- Well, note first that epsilon / 2 is also positive.
-  have Hε2 : ε / 2 > 0 := by linarith,
-  -- Choose large M₁ such that n ≥ M₁ implies |a n - l| < ε /2
-  cases (h1 (ε / 2) Hε2) with M₁ HM₁,
+  -- Choose large M₁ such that n ≥ M₁ implies |a n - l| < ε
+  cases (h1 ε Hε) with M₁ HM₁,
   -- similarly choose M₂ for the b sequence. 
-  cases (h2 (ε / 2) Hε2) with M₂ HM₂,
+  cases (h2 ε Hε) with M₂ HM₂,
   -- let N be the max of M1 and M2
   let N := max M₁ M₂,
   -- and let's use that 
   use N,
   -- Of course N ≥ M₁ and N ≥ M₂
-  have H₁ : N ≥ M₁ := le_max_left _ _,
-  have H₂ : N ≥ M₂ := le_max_right _ _,
+  have H₁ : N ≥ M₁ := by obvious_ineq,
+  have H₂ : N ≥ M₂ := by obvious_ineq,
   -- Now say n ≥ N.
   intros n Hn,
   -- Then obviously n ≥ M₁...
   have Hn₁ : n ≥ M₁ := by linarith,
-  -- ...so |aₙ - l| < ε /2
-  have H3 : |a n - l| < ε / 2 := HM₁ n Hn₁,
-  -- and similarly n ≥ M₂, so |bₙ - l| < ε / 2
-  have H4 : |b n - m| < ε / 2 := HM₂ n (by linarith),
-  -- And now what we want (|aₙ + bₙ - (l + m)| < ε) 
-  -- follows from a calculation.
+  -- ...so |aₙ - l| < ε
+  have H3 : |a n - l| < ε := HM₁ n Hn₁,
+  -- and similarly n ≥ M₂, so |bₙ - l| < ε
+  have H4 : |b n - m| < ε := HM₂ n (by linarith),
+  -- And now we can estimate (|aₙ + bₙ - (l + m)| < 2ε) 
                                -- First do some obvious algebra
   calc |(a + b) n - (l + m)| = |(a n - l) + (b n - m)| : by ring
                                -- now use the triangle inequality
   ...                        ≤ |(a n - l)| + |(b n - m)| : abs_add _ _
                                -- and our assumptions
-  ...                        < ε / 2 + ε / 2 : by linarith 
+  ...                        < ε + ε : by linarith 
                                -- and a bit more algebra
-  ...                        = ε : by ring
+  ...                        = 2*ε : by ring
 end
 
 -- A sequence (aₙ) is *bounded* if there exists some real number B such that |aₙ| ≤ B for all n≥0.
 
 definition has_bound (a : ℕ → ℝ) (B : ℝ) := ∀ n, |a n| ≤ B
 definition is_bounded (a : ℕ → ℝ) := ∃ B, has_bound a B
+
+-- We really have a problem with that |.| notation
+-- The following lemma is obvious
+lemma has_bound_const (m : ℝ): has_bound (λ n, m) $ |m|  :=
+assume n, by simp
 
 -- A convergent sequence is bounded.
 open finset
@@ -251,32 +279,31 @@ begin
   simp [zero_le_one],
 end
 
--- If a convergent sequence is bounded in absolute value by B,
--- then the limit is also bounded in absolute value by B.
-theorem limit_bounded_of_bounded {a : ℕ → ℝ} {l : ℝ} (Ha : is_limit a l)
-  {B : ℝ} (HB : has_bound a B) : |l| ≤ B :=
+lemma tendsto_bounded_mul_zero {a : ℕ → ℝ} {b : ℕ → ℝ} {A : ℝ} (Apos : A > 0)
+  (hA : has_bound a A) (hB : is_limit b 0) 
+  : is_limit (a*b) 0 :=
 begin
-  -- Suppose it's not true.
-  apply le_of_not_gt,
-  -- Then |l| > B.
-  intro HlB,
-  -- Set ε = (|l| - B) / 2,
-  let ε := ( |l| - B) / 2,
-  -- noting that it's positive
-  have Hε : ε > 0 := div_pos (by linarith) (by linarith),
-  -- and choose N such that |a_N - l| < ε
-  cases Ha ε Hε with N HN,
-  have HN2 := HN N (le_refl _),
-  -- Now |a_N| ≤ B
-  have HB2 : |a N| ≤ B := HB N,
-  -- so now we get a contradiction
-  have Hcontra :=
-  calc |l| ≤ |a N - l| + |a N| : by unfold abs;unfold max;split_ifs;linarith
-  ...      < ε + B : add_lt_add_of_lt_of_le HN2 HB2
-  ...      = ( |l| - B) / 2 + B : rfl
-  ...      < |l| : by linarith,
-  linarith,  
+  -- Let's apply our variant of the definition of limits where the final 
+  -- ε gets multiplied by some constant to be determined
+  apply tendsto_of_mul_eps,
+  -- Let ε be any positive number
+  intros ε εpos,
+  -- by assumption hB, we get some N such that 
+  -- ∀ (n : ℕ), n ≥ N → |b n| < ε
+  cases hB ε εpos with N H,
+  simp at H,
+  -- Let's use that N
+  use N,
+  -- And compute for any n ≥ N
+  intros n nN,
+  calc 
+  |(a * b) n - 0| = |a n * b n|    : by simp
+              ... = |a n| * |b n|  : abs_mul _ _
+              ... ≤ A*|b n|        : mul_le_mul_of_nonneg_right (hA n) (abs_nonneg _)
+              ... < A*ε            : mul_lt_mul_of_pos_left (H n nN) Apos
 end
+
+
 
 -- The limit of the product is the product of the limits.
 -- If aₙ → l and bₙ → m then aₙ * bₙ → l * m.
@@ -284,45 +311,39 @@ theorem tendsto_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
   (h1 : is_limit a l) (h2 : is_limit b m) :
   is_limit (a * b) (l * m) :=
 begin
-  -- let epsilon be a positive real
-  intros ε Hε,
-  -- Now aₙ has a limit,
-  have ha : has_limit a := ⟨l,h1⟩,
-  -- so it's bounded in absolute value by a positive real A
-  rcases bounded_pos_of_convergent a ha with ⟨A,HApos,HAbd⟩,
-  -- Similarly bₙ is bounded by B.
-  rcases bounded_pos_of_convergent b ⟨m,h2⟩ with ⟨B,HBpos,HBbd⟩,
-  -- Now chose N_A such that n ≥ N_A -> |aₙ - l| < ε / 2B
-  cases h1 (ε / (2 * B)) (div_pos Hε (by linarith)) with NA HNA,
-  -- and choose N_B such that n ≥ N_B -> |bₙ - m| < ε /2A
-  cases h2 (ε / (2 * A)) (div_pos Hε (by linarith)) with NB HNB,
-  -- Let N be the max of N_A and N_B; this N works.
-  let N := max NA NB,
-  use N,
-  -- For if n ≥ N
-  intros n Hn,
-  -- then |aₙ bₙ - l m| ...
-  calc 
-        |a n * b n - l * m| 
-      -- equals |aₙ (bₙ - m) + (aₙ - l) m|, 
-      = |a n * (b n - m) + (a n - l) * m | : by ring
-      -- which by the triangle inequality and multiplicativy of |.|
-  ... ≤ |a n * (b n - m)| + |(a n - l) * m| : abs_add _ _
-      -- is at most |aₙ| |bₙ - m| + |aₙ - l| |m|,
-  ... ≤ |a n| * |b n - m| + |a n - l| * |m| : by simp [abs_mul]
-      -- which is at most A(ε / 2A) + B(ε / 2B), by a very tedious calculation in Lean
-  ... ≤ A * |b n - m| + |a n - l| * |m| :
-                add_le_add_right (mul_le_mul_of_nonneg_right (HAbd n) (abs_nonneg _)) _
-  ... < A * (ε / (2 * A)) + |a n - l| * |m| :
-               add_lt_add_right (mul_lt_mul_of_pos_left (HNB n (le_trans (le_max_right _ _) Hn)) HApos) _
-  ... ≤ A * (ε / (2 * A)) + (ε / (2 * B)) * |m| :
-               add_le_add_left (mul_le_mul_of_nonneg_right (le_of_lt $ HNA n $ le_trans (le_max_left _ _) Hn) (abs_nonneg _)) _
-  ... ≤ A * (ε / (2 * A)) + (ε / (2 * B)) * B :
-               add_le_add_left (mul_le_mul_of_nonneg_left (limit_bounded_of_bounded h2 HBbd) $ le_of_lt $ div_pos Hε (by linarith)) _
-  -- which is at most ε by some easy algebra.
-  ... = ε / 2 + (ε / (2 * B)) * B : by rw [←div_div_eq_div_mul,mul_div_cancel' _ (show A ≠ 0, by intro h;rw h at HApos;linarith)]
-  ... = ε / 2 + ε / 2 : by rw [←div_div_eq_div_mul,div_mul_cancel _ (show B ≠ 0, by intro h;rw h at HBpos;linarith)]
-  ... = ε : by ring 
+  -- We apply the difference criterion so we need to prove a*b - l*m goes to zero
+  rw ←tendsto_iff_sub_tendsto_zero,
+
+  -- The key idea is to introduce (a_n - l) and (b_n - m) in this difference
+  have key : (λ n, (a*b) n - l*m) = (λ n, (a n)*(b n - m) + m*(a n - l)),
+  by simp ; ring,
+  rw key,
+  
+  -- By addition of limit, it then suffices to prove a_n * (b_n - m) and m*(a_n - l)
+  -- both go to zero
+  suffices : is_limit (λ n, a n * (b n - m)) 0 ∧ is_limit (λ n, m * (a n - l)) 0,
+  { rw [show (0 : ℝ) = 0 + 0, by simp],
+    exact tendsto_add _ _ _ _ this.left this.right},
+  -- Let's tacke one after the other
+  split,
+  { -- Since a is convergent, it's bounded by some positive A
+    rcases bounded_pos_of_convergent a ⟨l, h1⟩ with ⟨A, A_pos, hA⟩,
+    -- We can reformulate the b convergence assumption as b_n - m goes to zero.
+    have limb : is_limit (λ n, b n - m) 0,
+     from tendsto_iff_sub_tendsto_zero.2 h2,
+    -- So we can conclude using our lemma about product of a bounded sequence and a
+    -- sequence converging to zero
+    exact tendsto_bounded_mul_zero A_pos hA limb },
+  { -- It remains to prove m * (a_n - l) goes to zero
+    -- If m = 0 this is obvious.
+    by_cases Hm : m = 0,
+    { simp [Hm, tendsto_const] },
+    -- Otherwise we follow the same strategy as above.
+    { -- We reformulate our convergence assumption on a as a_n - l goes to zero
+      have lima : is_limit (λ n, a n - l) 0, 
+        from tendsto_iff_sub_tendsto_zero.2 h1,
+      -- and conclude using the same lemma
+      exact tendsto_bounded_mul_zero (abs_pos_iff.2 Hm) (has_bound_const m) lima } }
 end
 
 -- If aₙ → l and bₙ → m, and aₙ ≤ bₙ for all n, then l ≤ m
@@ -372,8 +393,8 @@ begin
   let N := max Na Nc,
   use N,
   -- Now for n ≥ N, note n ≥ Na and N ≥ Nc,
-  have HNa : Na ≤ N := by obvineq,  
-  have HNc : Nc ≤ N := by obvineq,
+  have HNa : Na ≤ N := by obvious_ineq,  
+  have HNc : Nc ≤ N := by obvious_ineq,
   intros n Hn,
   have h1 : a n ≤ b n := hab n,
   have h2 : b n ≤ c n := hbc n,

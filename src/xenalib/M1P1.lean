@@ -13,6 +13,6 @@ meta def ineq_rules : user_attribute :=
 
 attribute [ineq_rules] add_lt_add le_max_left le_max_right
 
-meta def obvineq := `[linarith <|> apply_rules ineq_rules]
-run_cmd add_interactive [`obvineq]
+meta def obvious_ineq := `[linarith <|> apply_rules ineq_rules]
+run_cmd add_interactive [`obvious_ineq]
 -- end of scary things
