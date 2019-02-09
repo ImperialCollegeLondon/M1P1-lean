@@ -36,6 +36,9 @@ theorem decreasing_of_nat {α : Type u} [preorder α] (f : ℕ → α) (hf : ∀
 theorem strictly_decreasing_of_nat {α : Type u} [preorder α] (f : ℕ → α) (hf : ∀ n, f (n + 1) < f n) : strictly_decreasing f :=
 λ x y hxy, nat.less_than_or_equal.rec_on hxy (hf x) $ λ n hn ih, lt_trans (hf n) ih
 
+theorem nat.le_of_strictly_increasing (f : ℕ → ℕ) (hf : strictly_increasing f) (n : ℕ) : n ≤ f n :=
+nat.rec_on n (f 0).zero_le $ λ n hn, le_trans (nat.succ_le_succ hn) (hf n (n+1) n.lt_succ_self)
+
 end monotone
 
 variables {α : Type u} [decidable_linear_order α]
