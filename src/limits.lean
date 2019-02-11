@@ -49,7 +49,7 @@ namespace M1P1
 -- the maths starts here.
 
 -- We introduce the usual mathematical notation for absolute value
-local notation `|` x `|` := abs x
+notation `|` x `|` := abs x
 
 -- We model a sequence a₀, a₁, a₂,... of real numbers as a function
 -- from ℕ := {0,1,2,...} to ℝ, sending n to aₙ . So in the below
@@ -379,30 +379,5 @@ begin
   unfold abs,unfold max,split_ifs;intros;linarith
 end
 
-theorem sandwich (a b c : ℕ → ℝ)
-  (l : ℝ) (ha : is_limit a l) (hc : is_limit c l) 
-  (hab : ∀ n, a n ≤ b n) (hbc : ∀ n, b n ≤ c n) : is_limit b l :=
-begin
-  -- Choose ε > 0
-  intros ε Hε,
-  -- we now need an N. This is a standard ε/2 argument.
-  -- Choose Na and Nc such that |aₙ - l| < ε for n ≥ Na and |cₙ - l| < ε for n ≥ Nc.
-  cases ha ε Hε with Na Ha,
-  cases hc ε Hε with Nc Hc,
-  -- and as usual let N be the max.
-  let N := max Na Nc,
-  use N,
-  -- Now for n ≥ N, note n ≥ Na and N ≥ Nc,
-  have HNa : Na ≤ N := by obvious_ineq,  
-  have HNc : Nc ≤ N := by obvious_ineq,
-  intros n Hn,
-  have h1 : a n ≤ b n := hab n,
-  have h2 : b n ≤ c n := hbc n,
-  have h3 : |a n - l| < ε := Ha n (le_trans HNa Hn),
-  have h4 : |c n - l| < ε := Hc n (le_trans HNc Hn),
-  revert h3,revert h4,
-  unfold abs,unfold max,
-  split_ifs;intros;linarith,
-end
 
 end M1P1
