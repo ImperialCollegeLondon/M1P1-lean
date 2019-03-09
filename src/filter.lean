@@ -1,16 +1,31 @@
+-- begin header
 import limits
 import order.filter
 import topology.basic
 import topology.instances.real
 
-#check is_open
-
-#help options
+lemma set.finite_lt_nat (n : ℕ) : set.finite {i | i < n} := ⟨set.fintype_lt_nat _⟩
 
 --set_option pp.notation false
-set_option simp.trace_instances true
+--set_option trace.simplify.rewrite true
+-- end header
+
+/- Section
+Sequence tending to a limit
+-/
+
+/-
+Here we show that a sequence $(a_n)_n$ tends to a limit $ℓ$ iff the
+cofinite filter on ℕ tends to the neighbourgood filter of $ℓ$ along
+the function $n ↦ a_n$. 
+-/
+
+/- Lemma
+Let $(a_n)$ be a sequence of reals and let $ℓ$ be a real. 
+Then $a_n→ℓ$ if and only if `filter.tendsto a (filter.cofinite) (nhds l)`.
+-/
 lemma is_limit_iff_tendsto (a : ℕ → ℝ) (l : ℝ) :
-M1P1.is_limit a l ↔
+(∀ ε, ε > 0 → ∃ N : ℕ, ∀ n, N ≤ n → | a n - l| < ε) ↔
   filter.tendsto a (filter.cofinite) (nhds l) :=
 begin
   split,
@@ -30,6 +45,7 @@ begin
     -- Let's use the fact that a n → l
     rcases Hl ε Hε with ⟨N, HN⟩,
     let S := {n : ℕ | N ≤ n},
+    -- this is the definition of a_n → l
     have HS : S ⊆ a ⁻¹' metric.ball l ε,
     { intros n Hn,
       show a n ∈ _,
@@ -39,11 +55,15 @@ begin
     apply filter.mem_sets_of_superset _ HS,
     show set.finite (-S),
     show set.finite {n : ℕ | ¬ (N ≤ n)},
-    simp,
-    unfold has_neg.neg lattice.boolean_algebra.neg lattice.complete_boolean_algebra.neg,
-    unfold set.compl,
-    sorry },
-  { 
+    simp only [not_le],
+    exact set.finite_lt_nat _},
+  { -- filter.tendsto implies a_n → l
+    intro HF,
+    intros ε Hε,
+    -- need N such that n ≥ N implies a_n → l,
+    unfold filter.tendsto at HF,
+    unfold filter.map at HF,
+    have X := HF _, --(metric.ball l ε),
     sorry },
 end
 
