@@ -3,12 +3,7 @@ import order.filter
 import topology.basic
 import topology.instances.real
 
-#check is_open
-
-#help options
-
 --set_option pp.notation false
-set_option simp.trace_instances true
 lemma is_limit_iff_tendsto (a : ℕ → ℝ) (l : ℝ) :
 M1P1.is_limit a l ↔
   filter.tendsto a (filter.cofinite) (nhds l) :=
@@ -39,11 +34,11 @@ begin
     apply filter.mem_sets_of_superset _ HS,
     show set.finite (-S),
     show set.finite {n : ℕ | ¬ (N ≤ n)},
-    simp,
-    unfold has_neg.neg lattice.boolean_algebra.neg lattice.complete_boolean_algebra.neg,
-    unfold set.compl,
-    sorry },
-  { 
+    simp only [not_le],
+    exact ⟨set.fintype_lt_nat _⟩ },
+  { intro h,
+    intros ε hε,
+    have H : metric.ball l ε ∈ nhds l := metric.mem_ball, 
     sorry },
 end
 
