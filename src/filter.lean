@@ -4,8 +4,6 @@ import order.filter
 import topology.basic
 import topology.instances.real
 
-lemma set.finite_lt_nat (n : ℕ) : set.finite {i | i < n} := ⟨set.fintype_lt_nat _⟩
-
 --set_option pp.notation false
 --set_option trace.simplify.rewrite true
 -- end header
@@ -24,6 +22,7 @@ the function $n ↦ a_n$.
 Let $(a_n)$ be a sequence of reals and let $ℓ$ be a real. 
 Then $a_n→ℓ$ if and only if `filter.tendsto a (filter.cofinite) (nhds l)`.
 -/
+--set_option pp.all true
 lemma is_limit_iff_tendsto (a : ℕ → ℝ) (l : ℝ) :
 (∀ ε, ε > 0 → ∃ N : ℕ, ∀ n, N ≤ n → | a n - l| < ε) ↔
   filter.tendsto a (filter.cofinite) (nhds l) :=
@@ -52,7 +51,8 @@ begin
       rw metric.mem_ball,
       exact HN n Hn,
     },
-    apply filter.mem_sets_of_superset _ HS,
+    suffices : S ∈ filter.cofinite.sets,
+      exact filter.mem_sets_of_superset this HS,
     show set.finite (-S),
     show set.finite {n : ℕ | ¬ (N ≤ n)},
     simp only [not_le],
@@ -63,7 +63,7 @@ begin
     -- need N such that n ≥ N implies a_n → l,
     unfold filter.tendsto at HF,
     unfold filter.map at HF,
-    have X := HF _, --(metric.ball l ε),
+--    have X := HF _, --(metric.ball l ε),
     sorry },
 end
 

@@ -113,8 +113,8 @@ begin
       rw H1, clear H1, split,
       { intros x Hx,exact Hx },
       { intros b Hb,
-        exact Hb a (le_refl _),
-        sorry },
+        exact Hb a (le_refl a),
+      },
     },
   },
   {

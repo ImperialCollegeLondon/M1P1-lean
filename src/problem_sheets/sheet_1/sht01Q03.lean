@@ -18,7 +18,7 @@ begin
     change ¬ (v ∈ {x : ℝ | ∀ s, s ∈ S → s ≤ v}) at Hv', -- bug in Lean?
     change ¬ (v ∈ {x : ℝ | ∀ s, s ∈ S → s ≤ x}) at Hv', -- bug in Lean?
   --  change ¬ (∀ s : ℝ, s ∈ S → s ≤ v) at Hv',
-    rw not_forall at Hv',
+  --  rw not_forall at Hv',
     sorry },
   { 
     sorry },

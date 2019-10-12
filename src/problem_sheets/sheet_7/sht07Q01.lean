@@ -58,18 +58,12 @@ begin
   -- First goal: get rid of divisions.
   rw div_mul_div,
   symmetry, -- kind of annoying that I have to stop my rewrite,
-  rw (eq_div_iff_mul_eq _),
-    swap,norm_num,
-  -- Now multiplying out will remove them so use ring
-  suffices : 2 * sqrt 5 + 6 = (sqrt 5 + 2) * sqrt 5 + 1,
-    ring, exact this,
-  -- Now get sqrt 5's together
-  rw [add_mul,←pow_two],
-  -- ... and kill them
-  rw sqr_sqrt,
-    swap,norm_num,
-  -- Now ring will do it.
-  ring,
+  rw [eq_div_iff_mul_eq, add_mul, ←mul_assoc, div_mul_cancel],
+    swap, norm_num, swap, norm_num,
+  -- now `ring` will do it but we need to square the sqrt(5)
+  rw [mul_add, add_mul _ _ (sqrt 5), mul_self_sqrt],
+    swap, norm_num,
+  ring, 
 end
 
 lemma φ_squared' : φ ^ 2 = φ + 1 :=

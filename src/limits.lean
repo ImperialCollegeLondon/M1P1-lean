@@ -184,7 +184,8 @@ begin
   have H4 : |b n - m| < ε := HM₂ n (by linarith),
   -- And now we can estimate (|aₙ + bₙ - (l + m)| < 2ε) 
                                -- First do some obvious algebra
-  calc |(a + b) n - (l + m)| = |(a n - l) + (b n - m)| : by ring
+  calc |(a + b) n - (l + m)| = |a n + b n - (l + m)| : rfl
+  ...                        = |(a n - l) + (b n - m)| : by congr' 1; ring
                                -- now use the triangle inequality
   ...                        ≤ |(a n - l)| + |(b n - m)| : abs_add _ _
                                -- and our assumptions
@@ -316,7 +317,7 @@ begin
 
   -- The key idea is to introduce (a_n - l) and (b_n - m) in this difference
   have key : (λ n, (a*b) n - l*m) = (λ n, (a n)*(b n - m) + m*(a n - l)),
-  by simp ; ring,
+    simp, ext, ring,
   rw key,
   
   -- By addition of limit, it then suffices to prove a_n * (b_n - m) and m*(a_n - l)
