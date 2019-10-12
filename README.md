@@ -15,7 +15,7 @@ Once you have these, you can install this project with the following incantation
 
 ```
 git clone git@github.com:ImperialCollegeLondon/M1P1-lean.git
-cd M1P1_lean
+cd M1P1-lean
 leanpkg configure
 update-mathlib
 ```
