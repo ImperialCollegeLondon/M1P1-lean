@@ -19,3 +19,5 @@ cd M1P1-lean
 leanpkg configure
 update-mathlib
 ```
+
+Then go to VS Code and use the File -> Open Folder option (this is important) and open the project folder.
