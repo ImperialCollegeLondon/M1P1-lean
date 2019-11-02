@@ -379,5 +379,4 @@ begin
   unfold abs,unfold max,split_ifs;intros;linarith
 end
 
-
 end M1P1
