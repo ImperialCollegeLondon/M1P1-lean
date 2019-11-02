@@ -1,5 +1,7 @@
 import limits tactic.linarith
 
+open M1P1
+
 -- The sequence 1/n tends to zero as n -> infinity.
 theorem easy : is_limit (λ n, 1 / n) 0 :=
 begin
@@ -33,5 +35,5 @@ begin
   suffices : (1 : ℝ) / n ≤ 1 / N,
     exact lt_of_le_of_lt this HM,
   -- This follows easily from the fact that N ≤ n
-  exact div_le_div_of_le_left (zero_le_one) Hn'' HM'' HNn
+  refine div_le_div_of_le_left zero_le_one HM'' HNn,
 end

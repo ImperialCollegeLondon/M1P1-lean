@@ -82,7 +82,6 @@ theorem Q1f (x y : ℝ) : |x| ≥ |y| - |x - y| :=
 begin
   have h := Q1a (x - y) (-x),
   simp * at *,
-  linarith,
 end
 
 theorem Q1g (x y z : ℝ) : |x - y| ≤ |x - z| + |y - z| :=
@@ -91,12 +90,6 @@ begin
   -- Lean needs more hints with this one.
   -- First let's change that y - z into z - y,
   rw ←abs_neg (y - z),
-  -- now get everything into some sort of normal form
+  -- now use automation
   simp * at *,
-  -- unfortunately Lean didn't yet simplify x + (z + (-y + -z))
-  -- The "convert" tactic says "OK the goal should equal this, so
-  -- replace the goal with all the bits that aren't exactly equal"
-  convert h,
-  -- now we need to prove -y = z + (-y + -z)!
-  ring,
 end

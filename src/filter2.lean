@@ -22,6 +22,7 @@ the function $n ↦ a_n$.
 Let $(a_n)$ be a sequence of reals and let $ℓ$ be a real. 
 Then $a_n→ℓ$ if and only if `filter.tendsto a (filter.cofinite) (nhds l)`.
 -/
+--set_option pp.all true
 lemma is_limit_iff_tendsto (a : ℕ → ℝ) (l : ℝ) :
 (∀ ε, ε > 0 → ∃ N : ℕ, ∀ n, N ≤ n → | a n - l| < ε) ↔
   filter.tendsto a (filter.cofinite) (nhds l) :=
@@ -52,7 +53,8 @@ begin
       rw metric.mem_ball,
       exact HN n Hn,
     },
-    apply filter.mem_sets_of_superset _ HS,
+    suffices : S ∈ filter.cofinite.sets,
+      exact filter.mem_sets_of_superset this HS,
     show set.finite (-S),
     show set.finite {n : ℕ | ¬ (N ≤ n)},
     simp only [not_le],
@@ -61,9 +63,15 @@ begin
     intro h,
     intros ε hε,
     -- need N such that n ≥ N implies a_n → l,
+<<<<<<< HEAD:src/filter2.lean
     have : metric.ball l ε ∈ (nhds l),
       exact metric.mem_nhds_iff.2 ⟨ε, hε, by refl⟩,
     
+=======
+    unfold filter.tendsto at HF,
+    unfold filter.map at HF,
+--    have X := HF _, --(metric.ball l ε),
+>>>>>>> af595e6d3ec06d523668e63274e1ad9f6149e10e:src/filter.lean
     sorry },
 end
 
